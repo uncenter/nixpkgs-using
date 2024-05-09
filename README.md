@@ -2,6 +2,18 @@
 
 Find packages that you use that are currently being updated in Nixpkgs.
 
+```
+╭───────────────────────────────────┬──────────────────────────────────────────────╮
+│ title                             │ url                                          │
+├───────────────────────────────────┼──────────────────────────────────────────────┤
+│ ruff: 0.4.3 -> 0.4.4              │ https://github.com/nixos/nixpkgs/pull/310440 │
+│ vscode: 1.89.0 -> 1.89.1          │ https://github.com/nixos/nixpkgs/pull/310396 │
+│ spicetify-cli: rename bin         │ https://github.com/nixos/nixpkgs/pull/309570 │
+│ git: 2.44.0 -> 2.45.0             │ https://github.com/nixos/nixpkgs/pull/308186 │
+│ imagemagick: 7.1.1-30 -> 7.1.1-32 │ https://github.com/nixos/nixpkgs/pull/307309 │
+╰───────────────────────────────────┴──────────────────────────────────────────────╯
+```
+
 ## Installation
 
 ### Cargo
