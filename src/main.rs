@@ -24,6 +24,7 @@ enum Output {
 }
 
 #[derive(Parser)]
+#[command(version, about)]
 struct Cli {
 	/// Path to the flake to evaluate
 	#[clap(long, short)]
