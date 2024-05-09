@@ -25,14 +25,19 @@ enum Output {
 
 #[derive(Parser)]
 struct Cli {
+	/// Path to the flake to evaluate
 	#[clap(long, short)]
 	flake: Option<String>,
+	/// Configuration to extract packages from
 	#[clap(long, short)]
 	configuration: Option<String>,
+	/// Username to locate Home Manager packages from
 	#[clap(long, short)]
 	username: Option<String>,
+	/// The (GitHub) repository from which pull requests are fetched
 	#[clap(long, short, default_value = "nixos/nixpkgs")]
 	repository: String,
+	/// Output format for the results of the search
 	#[clap(long, short, value_enum, default_value = "table")]
 	output: Output,
 }
