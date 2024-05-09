@@ -1,12 +1,14 @@
 use clap::{Parser, ValueEnum};
-use color_eyre::eyre::{bail, eyre, Ok, Result};
-use serde::{Deserialize, Serialize};
-use tabled::settings::Style;
+use color_eyre::eyre::{bail, eyre, ContextCompat, Ok, Result};
 
 use std::env;
 use std::path::Path;
 use std::process::Command;
 
+use serde::{Deserialize, Serialize};
+use users::get_current_username;
+
+use tabled::settings::Style;
 use tabled::{Table, Tabled};
 
 #[derive(Tabled, Debug, Serialize)]
@@ -67,15 +69,10 @@ async fn main() -> Result<()> {
 
 	let username: String = match args.username {
 		Some(value) => value,
-		None => String::from_utf8(
-			Command::new("whoami")
-				.output()
-				.unwrap()
-				.stdout,
-		)
-		.or_else(|_| Err(eyre!("Unable to detect username using `whoami` command")))?
-		.trim()
-		.to_string(),
+		None => get_current_username()
+			.context("Failed to get current username")?
+			.into_string()
+			.unwrap(),
 	};
 
 	let configuration = detect_configuration().unwrap()
