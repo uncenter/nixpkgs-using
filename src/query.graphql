@@ -1,0 +1,16 @@
+query PullRequests($owner: String!, $name: String!, $cursor: String) {
+	repository(owner: $owner, name: $name) {
+		pullRequests(states: OPEN, first: 100, after: $cursor) {
+			nodes {
+				title
+				url
+				isDraft
+			}
+			pageInfo {
+				endCursor
+				hasNextPage
+				hasPreviousPage
+			}
+		}
+	}
+}
