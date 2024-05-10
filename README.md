@@ -34,6 +34,8 @@ nix run github:uncenter/nixpkgs-using
 nixpkgs-using [OPTIONS]
 ```
 
+Requires a GitHub API token to use (provided through the `--token` flag or from the `GITHUB_TOKEN`/`GH_TOKEN` environment variables). With roughly 6,000 open PRs on [NixOS/nixpkgs](https://github.com/NixOS/nixpkgs), ~60 API requests are made per run. GitHub's documentation on GraphQL ratelimiting isn't very clear so I can't say for certain how many runs it will take for the rate limit to be reached, but for good measure don't run it more then 5-ish times an hour.
+
 ### `--flake`
 
 Path to the flake to evaluate. Defaults to the `FLAKE` environment variable, if present.
