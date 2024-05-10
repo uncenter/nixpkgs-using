@@ -2,6 +2,7 @@
   lib,
   rustPlatform,
   version ? "latest",
+  pkg-config,
   ...
 }:
 rustPlatform.buildRustPackage {
@@ -10,6 +11,10 @@ rustPlatform.buildRustPackage {
 
   src = ./.;
   cargoLock.lockFile = ./Cargo.lock;
+
+  nativeBuildInputs = [
+    pkg-config
+  ];
 
   meta = {
     description = "Find packages that you use that are currently being updated in Nixpkgs.";

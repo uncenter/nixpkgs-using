@@ -14,7 +14,7 @@
   in {
     packages = forAllSystems (system: rec {
       default = pkgsForEach.${system}.callPackage ./default.nix {inherit version;};
-      kittysay = default;
+      nixpkgs-using = default;
     });
 
     devShells = forAllSystems (system: {
