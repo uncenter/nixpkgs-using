@@ -36,8 +36,9 @@ enum Output {
 #[derive(Parser)]
 #[command(version, about)]
 struct Cli {
+	// GitHub token
 	#[clap(long, short)]
-	token: String,
+	token: Option<String>,
 	/// Path to the flake to evaluate
 	#[clap(long, short)]
 	flake: Option<String>,
@@ -91,6 +92,11 @@ fn get_pull_requests(client: Client, owner: String, repo: String, cursor: std::o
 fn main() -> Result<()> {
 	let args = Cli::parse();
 	color_eyre::install()?;
+
+	let token: String = match args.token {
+		Some(value) => value,
+		None => env::var("GITHUB_TOKEN").unwrap_or(env::var("GH_TOKEN").or_else(|_| Err(eyre!("No GitHub token provided and not found in `GITHUB_TOKEN`/`GH_TOKEN` environment variables")))?),
+	};
 
 	let flake: String = match args.flake {
 		Some(value) => value,
@@ -151,7 +157,7 @@ fn main() -> Result<()> {
 
 	let client = Client::builder()
 		.user_agent("graphql-rust/0.10.0")
-		.default_headers(std::iter::once((reqwest::header::AUTHORIZATION, reqwest::header::HeaderValue::from_str(&format!("Bearer {}", args.token)).unwrap())).collect())
+		.default_headers(std::iter::once((reqwest::header::AUTHORIZATION, reqwest::header::HeaderValue::from_str(&format!("Bearer {}", token)).unwrap())).collect())
 		.build()?;
 
 	let mut cursor = None;
