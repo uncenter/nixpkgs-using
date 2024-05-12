@@ -8,18 +8,11 @@ use std::process::Command;
 use serde::Serialize;
 use users::get_current_username;
 
+mod github;
+use github::paginate_pull_requests;
+
 use tabled::settings::Style;
 use tabled::{Table, Tabled};
-
-use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
-use reqwest::blocking::Client;
-
-#[allow(clippy::upper_case_acronyms)]
-type URI = String;
-#[derive(GraphQLQuery)]
-#[graphql(schema_path = "src/schema.graphql", query_path = "src/query.graphql", response_derives = "Debug")]
-struct PullRequests;
-use crate::pull_requests::{PullRequestsRepositoryPullRequests, PullRequestsRepositoryPullRequestsNodes};
 
 #[derive(Tabled, Debug, Serialize)]
 struct Entry {
@@ -79,25 +72,6 @@ fn detect_configuration() -> Result<String> {
 		"macos" => Ok("darwinConfigurations".to_string()),
 		_ => bail!("Unsupported operating system detected"),
 	}
-}
-
-fn get_pull_requests(client: Client, owner: String, repo: String, cursor: std::option::Option<std::string::String>) -> PullRequestsRepositoryPullRequests {
-	let variables = pull_requests::Variables {
-		owner: owner.to_string(),
-		name: repo.to_string(),
-		cursor: cursor,
-	};
-
-	let response_body = post_graphql::<PullRequests, _>(&client, "https://api.github.com/graphql", variables).unwrap();
-
-	let response_data: pull_requests::ResponseData = response_body
-		.data
-		.expect("missing response data");
-
-	return response_data
-		.repository
-		.expect("missing repository")
-		.pull_requests;
 }
 
 fn main() -> Result<()> {
@@ -171,27 +145,7 @@ fn main() -> Result<()> {
 	)
 	.unwrap();
 
-	let client = Client::builder()
-		.user_agent("graphql-rust/0.10.0")
-		.default_headers(std::iter::once((reqwest::header::AUTHORIZATION, reqwest::header::HeaderValue::from_str(&format!("Bearer {}", token)).unwrap())).collect())
-		.build()?;
-
-	let mut cursor = None;
-	let mut prs: Vec<Option<PullRequestsRepositoryPullRequestsNodes>> = vec![];
-
-	loop {
-		let data = get_pull_requests(client.clone(), owner.to_string(), repo.to_string(), cursor);
-
-		prs.extend(
-			data.nodes
-				.expect("pull requests nodes is null"),
-		);
-
-		if !data.page_info.has_next_page {
-			break;
-		}
-		cursor = data.page_info.end_cursor;
-	}
+	let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), token)?;
 
 	let filtered = prs
 		.iter()
