@@ -30,8 +30,8 @@ enum Output {
 #[command(version, about)]
 struct Cli {
 	// GitHub token
-	#[clap(long, short)]
-	token: Option<String>,
+	#[clap(long, short, env = "GITHUB_TOKEN")]
+	token: String,
 
 	/// Path to the flake to evaluate
 	#[clap(long, short)]
@@ -63,11 +63,6 @@ struct Cli {
 fn main() -> Result<()> {
 	let args = Cli::parse();
 	color_eyre::install()?;
-
-	let token: String = match args.token {
-		Some(value) => value,
-		None => env::var("GITHUB_TOKEN").unwrap_or(env::var("GH_TOKEN").or_else(|_| bail!("No GitHub token provided and not found in `GITHUB_TOKEN`/`GH_TOKEN` environment variables"))?),
-	};
 
 	let flake: String = match args.flake {
 		Some(value) => value,
@@ -103,7 +98,7 @@ fn main() -> Result<()> {
 	};
 
 	let packages = eval_nix_configuration(flake, configuration, username, args.home_manager_packages);
-	let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), token)?;
+	let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), args.token)?;
 
 	let filtered = prs
 		.iter()
