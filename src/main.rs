@@ -2,7 +2,6 @@ use clap::{ArgAction, Parser, ValueEnum};
 use color_eyre::eyre::{bail, eyre, ContextCompat, Ok, Result};
 use nixpkgs_using::{detect_configuration, eval_nix_configuration};
 
-use std::env;
 use std::process::Command;
 
 use serde::Serialize;
@@ -34,8 +33,8 @@ struct Cli {
 	token: String,
 
 	/// Path to the flake to evaluate
-	#[clap(long, short)]
-	flake: Option<String>,
+	#[clap(long, short, env = "FLAKE")]
+	flake: String,
 	/// Configuration to extract packages from
 	#[clap(long, short)]
 	configuration: Option<String>,
@@ -63,11 +62,6 @@ struct Cli {
 fn main() -> Result<()> {
 	let args = Cli::parse();
 	color_eyre::install()?;
-
-	let flake: String = match args.flake {
-		Some(value) => value,
-		None => env::var("FLAKE").or_else(|_| Err(eyre!("No flake path provided and `FLAKE` environment variable not found")))?,
-	};
 
 	let username: String = match args.username {
 		Some(value) => value,
@@ -97,7 +91,7 @@ fn main() -> Result<()> {
 		bail!("Invalid repository format");
 	};
 
-	let packages = eval_nix_configuration(flake, configuration, username, args.home_manager_packages);
+	let packages = eval_nix_configuration(args.flake, configuration, username, args.home_manager_packages);
 	let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), args.token)?;
 
 	let filtered = prs
