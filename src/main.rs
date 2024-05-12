@@ -1,8 +1,8 @@
 use clap::{ArgAction, Parser, ValueEnum};
 use color_eyre::eyre::{bail, eyre, ContextCompat, Ok, Result};
+use nixpkgs_using::{detect_configuration, eval_nix_configuration};
 
 use std::env;
-use std::path::Path;
 use std::process::Command;
 
 use serde::Serialize;
@@ -60,27 +60,13 @@ struct Cli {
 	home_manager_packages: bool,
 }
 
-fn detect_configuration() -> Result<String> {
-	match env::consts::OS {
-		"linux" => {
-			if Path::new("/etc/NIXOS").exists() {
-				Ok("nixosConfigurations".to_string())
-			} else {
-				Ok("homeConfigurations".to_string())
-			}
-		}
-		"macos" => Ok("darwinConfigurations".to_string()),
-		_ => bail!("Unsupported operating system detected"),
-	}
-}
-
 fn main() -> Result<()> {
 	let args = Cli::parse();
 	color_eyre::install()?;
 
 	let token: String = match args.token {
 		Some(value) => value,
-		None => env::var("GITHUB_TOKEN").unwrap_or(env::var("GH_TOKEN").or_else(|_| Err(eyre!("No GitHub token provided and not found in `GITHUB_TOKEN`/`GH_TOKEN` environment variables")))?),
+		None => env::var("GITHUB_TOKEN").unwrap_or(env::var("GH_TOKEN").or_else(|_| bail!("No GitHub token provided and not found in `GITHUB_TOKEN`/`GH_TOKEN` environment variables"))?),
 	};
 
 	let flake: String = match args.flake {
@@ -116,35 +102,7 @@ fn main() -> Result<()> {
 		bail!("Invalid repository format");
 	};
 
-	let packages: Vec<String> = serde_json::from_str(
-		String::from_utf8(
-			Command::new("nix")
-				.args([
-					"eval",
-					"--impure",
-					"--json",
-					"--expr",
-					(format!(
-						"(builtins.getFlake \"{flake}\").{configuration}.config.environment.systemPackages{}",
-						(if args.home_manager_packages {
-							format!(" ++ (builtins.getFlake \"{flake}\").{configuration}.config.home-manager.users.{username}.home.packages")
-						} else {
-							String::new()
-						})
-					))
-					.as_str(),
-					"--apply",
-					"map (pkg: (builtins.parseDrvName pkg.name).name)",
-				])
-				.output()
-				.unwrap()
-				.stdout,
-		)
-		.unwrap()
-		.as_str(),
-	)
-	.unwrap();
-
+	let packages = eval_nix_configuration(flake, configuration, username, args.home_manager_packages);
 	let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), token)?;
 
 	let filtered = prs
@@ -171,13 +129,14 @@ fn main() -> Result<()> {
 		})
 		.collect::<Vec<_>>();
 
-	if args.output == Output::Table {
-		let mut table = Table::new(&filtered);
-		table.with(Style::rounded());
+	match args.output {
+		Output::Json => println!("{}", serde_json::to_string(&filtered).unwrap()),
+		Output::Table => {
+			let mut table = Table::new(&filtered);
+			table.with(Style::rounded());
 
-		println!("{}", table.to_string());
-	} else if args.output == Output::Json {
-		println!("{}", serde_json::to_string(&filtered).unwrap());
+			println!("{}", table.to_string());
+		}
 	}
 
 	Ok(())
