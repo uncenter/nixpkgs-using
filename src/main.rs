@@ -1,8 +1,6 @@
 use clap::{ArgAction, Parser, ValueEnum};
-use color_eyre::eyre::{bail, eyre, ContextCompat, Ok, Result};
-use nixpkgs_using::{detect_configuration, eval_nix_configuration};
-
-use std::process::Command;
+use color_eyre::eyre::{bail, ContextCompat, Ok, Result};
+use nixpkgs_using::{detect_configuration, eval_nix_configuration, get_hostname};
 
 use serde::Serialize;
 use users::get_current_username;
@@ -71,17 +69,9 @@ fn main() -> Result<()> {
 			.unwrap(),
 	};
 
-	let configuration = detect_configuration().unwrap()
-		+ "." + String::from_utf8(
-		Command::new("hostname")
-			.arg("-s")
-			.output()
-			.or_else(|_| Err(eyre!("Unable to detect hostname using `hostname` command")))?
-			.stdout,
-	)
-	.unwrap()
-	.as_str()
-	.trim();
+	let configuration = (detect_configuration()? + "." + &get_hostname())
+		.trim()
+		.to_string();
 
 	let parts = args
 		.repository
@@ -97,24 +87,17 @@ fn main() -> Result<()> {
 	let filtered = prs
 		.iter()
 		.flatten()
-		.filter_map(|pr| {
-			let title = &pr.title;
-			let url = &pr.url;
-			let is_draft = &pr.is_draft;
-
-			if !is_draft
-				&& packages
-					.clone()
-					.into_iter()
-					.any(|pkg| (title).starts_with(&(pkg + ":")))
-			{
-				Some(Entry {
-					title: title.to_string(),
-					url: url.to_string(),
+		.filter(|pr| {
+			let is_draft = pr.is_draft;
+			!is_draft
+				&& packages.iter().any(|pkg| {
+					pr.title
+						.starts_with(&(pkg.to_owned() + ":"))
 				})
-			} else {
-				None
-			}
+		})
+		.map(|pr| Entry {
+			title: pr.title.clone(),
+			url: pr.url.clone(),
 		})
 		.collect::<Vec<_>>();
 

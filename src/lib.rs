@@ -39,3 +39,16 @@ pub fn eval_nix_configuration(flake: String, configuration: String, username: St
 	)
 	.unwrap();
 }
+
+pub fn get_hostname() -> String {
+	let output = Command::new("hostname")
+		.arg("-s")
+		.output()
+		.expect("hostname should exist");
+
+	return String::from_utf8(match output.status.success() {
+		true => output.stdout,
+		false => output.stderr,
+	})
+	.unwrap();
+}
