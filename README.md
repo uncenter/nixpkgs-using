@@ -56,6 +56,10 @@ The (GitHub) repository from which pull requests are fetched. Defaults to [`NixO
 
 Output format for the results of the search. One of `json` or `table`. Defaults to `table`.
 
+### `--only-updates`
+
+Exclude pull requests that are not updating a package (filters for PRs that include a `->` in the title, as is the preferred commit/PR title style in [NixOS/nixpkgs](https://github.com/NixOS/nixpkgs)).
+
 ## License
 
 [MIT](LICENSE)
