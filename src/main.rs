@@ -56,9 +56,9 @@ struct Cli {
 	#[clap(long = "no-home-manager-packages", action = ArgAction::SetFalse)]
 	home_manager_packages: bool,
 
-	/// Filter out pull requests that are not updates
+	/// Exclude pull requests that are not updating a package
 	#[clap(long)]
-	updates_only: bool,
+	only_updates: bool,
 }
 
 fn main() -> Result<()> {
@@ -93,7 +93,7 @@ fn main() -> Result<()> {
 		.flatten()
 		.filter(|pr| {
 			let is_draft = pr.is_draft;
-			let title_contains_update = !args.updates_only || pr.title.contains("->");
+			let title_contains_update = !args.only_updates || pr.title.contains("->");
 			!is_draft
 				&& title_contains_update
 				&& packages.iter().any(|pkg| {
