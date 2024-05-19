@@ -57,7 +57,7 @@ struct Cli {
 	home_manager_packages: bool,
 
 	/// Filter out pull requests that are not updates
-	#[clap(long = "updates-only")]
+	#[clap(long)]
 	updates_only: bool,
 }
 
