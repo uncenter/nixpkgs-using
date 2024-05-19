@@ -8,17 +8,19 @@
     nixpkgs,
     ...
   }: let
-    forAllSystems = nixpkgs.lib.genAttrs ["x86_64-linux" "x86_64-darwin" "i686-linux" "aarch64-linux" "aarch64-darwin"];
-    pkgsForEach = nixpkgs.legacyPackages;
+    forAllSystems = function:
+      nixpkgs.lib.genAttrs nixpkgs.lib.systems.flakeExposed (
+        system: function nixpkgs.legacyPackages.${system}
+      );
     version = self.shortRev or "dirty";
   in {
-    packages = forAllSystems (system: rec {
-      default = pkgsForEach.${system}.callPackage ./default.nix {inherit version;};
+    packages = forAllSystems (pkgs: rec {
+      default = pkgs.callPackage ./default.nix {inherit version;};
       nixpkgs-using = default;
     });
 
-    devShells = forAllSystems (system: {
-      default = pkgsForEach.${system}.callPackage ./shell.nix {};
+    devShells = forAllSystems (pkgs: {
+      default = pkgs.callPackage ./shell.nix {};
     });
   };
 }
