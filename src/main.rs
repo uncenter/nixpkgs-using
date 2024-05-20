@@ -1,7 +1,10 @@
 use clap::{ArgAction, Parser, ValueEnum};
 use color_eyre::eyre::{bail, ContextCompat, Ok, Result};
 use nixpkgs_using::{detect_configuration, eval_nix_configuration, get_hostname};
+use std::fs;
 
+use chrono::{TimeZone, Utc};
+use etcetera::{choose_base_strategy, BaseStrategy};
 use serde::Serialize;
 use users::get_current_username;
 
@@ -15,6 +18,7 @@ use tabled::{Table, Tabled};
 struct Entry {
 	title: String,
 	url: String,
+	new: bool,
 }
 
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
@@ -65,6 +69,16 @@ fn main() -> Result<()> {
 	let args = Cli::parse();
 	color_eyre::install()?;
 
+	let most_recent_pr_store = choose_base_strategy()
+		.unwrap()
+		.cache_dir()
+		.join("nixpkgs-using/most_recent_pr");
+
+	if !most_recent_pr_store.exists() {
+		fs::create_dir_all(&most_recent_pr_store.parent().unwrap()).unwrap();
+		fs::write(&most_recent_pr_store, "0").unwrap();
+	}
+
 	let username: String = match args.username {
 		Some(value) => value,
 		None => get_current_username()
@@ -88,24 +102,38 @@ fn main() -> Result<()> {
 	let packages = eval_nix_configuration(args.flake, configuration, username, args.home_manager_packages);
 	let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), args.token)?;
 
-	let filtered = prs
-		.iter()
-		.flatten()
-		.filter(|pr| {
-			let is_draft = pr.is_draft;
-			let title_contains_update = !args.only_updates || pr.title.contains("->");
-			!is_draft
-				&& title_contains_update
-				&& packages.iter().any(|pkg| {
-					pr.title
-						.starts_with(&(pkg.to_owned() + ":"))
-				})
-		})
-		.map(|pr| Entry {
-			title: pr.title.clone(),
-			url: pr.url.clone(),
-		})
-		.collect::<Vec<_>>();
+	let most_recent_pr = Utc
+		.timestamp_opt(
+			fs::read_to_string(&most_recent_pr_store)
+				.unwrap()
+				.parse::<i64>()
+				.unwrap(),
+			0,
+		)
+		.unwrap();
+
+	let filtered =
+		prs.iter()
+			.flatten()
+			.filter(|pr| {
+				let is_draft = pr.is_draft;
+				let title_contains_update = !args.only_updates || pr.title.contains("->");
+				!is_draft
+					&& title_contains_update
+					&& packages.iter().any(|pkg| {
+						pr.title
+							.starts_with(&(pkg.to_owned() + ":"))
+					})
+			})
+			.map(|pr| Entry {
+				title: pr.title.clone(),
+				url: pr.url.clone(),
+				new: pr
+					.created_at
+					.signed_duration_since(most_recent_pr)
+					.num_milliseconds() > 0,
+			})
+			.collect::<Vec<_>>();
 
 	match args.output {
 		Output::Json => println!("{}", serde_json::to_string(&filtered).unwrap()),
@@ -115,6 +143,20 @@ fn main() -> Result<()> {
 
 			println!("{}", table.to_string());
 		}
+	}
+
+	let mut sorted: Vec<_> = prs.into_iter().flatten().collect();
+	sorted.sort_by_key(|pr| pr.created_at.timestamp());
+
+	if let Some(latest_pr) = sorted.last() {
+		fs::write(
+			most_recent_pr_store,
+			latest_pr
+				.created_at
+				.timestamp()
+				.to_string(),
+		)
+		.expect("Unable to write file");
 	}
 
 	Ok(())
