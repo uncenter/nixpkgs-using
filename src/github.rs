@@ -1,3 +1,4 @@
+use chrono::prelude::*;
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
 use reqwest::{blocking::Client, Error};
 
@@ -5,6 +6,7 @@ use self::pull_requests::{PullRequestsRepositoryPullRequests, PullRequestsReposi
 
 #[allow(clippy::upper_case_acronyms)]
 type URI = String;
+type DateTime = chrono::DateTime<Utc>;
 
 #[derive(GraphQLQuery)]
 #[graphql(schema_path = "src/schema.graphql", query_path = "src/query.graphql", response_derives = "Debug")]

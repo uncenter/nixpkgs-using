@@ -5,6 +5,7 @@ query PullRequests($owner: String!, $name: String!, $cursor: String) {
 				title
 				url
 				isDraft
+				createdAt
 			}
 			pageInfo {
 				endCursor
