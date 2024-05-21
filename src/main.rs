@@ -63,6 +63,9 @@ struct Cli {
 	/// Exclude pull requests that are not updating a package
 	#[clap(long)]
 	only_updates: bool,
+	/// Exclude pull requests that have already been shown
+	#[clap(long)]
+	only_new: bool,
 }
 
 fn main() -> Result<()> {
@@ -112,28 +115,34 @@ fn main() -> Result<()> {
 		)
 		.unwrap();
 
-	let filtered =
-		prs.iter()
-			.flatten()
-			.filter(|pr| {
-				let is_draft = pr.is_draft;
-				let title_contains_update = !args.only_updates || pr.title.contains("->");
-				!is_draft
-					&& title_contains_update
-					&& packages.iter().any(|pkg| {
-						pr.title
-							.starts_with(&(pkg.to_owned() + ":"))
-					})
-			})
-			.map(|pr| Entry {
-				title: pr.title.clone(),
-				url: pr.url.clone(),
-				new: pr
+	let filtered = prs
+		.iter()
+		.flatten()
+		.filter_map(|pr| {
+			let is_draft = pr.is_draft;
+			let title_contains_update = !args.only_updates || pr.title.contains("->");
+			let title_has_match = packages.iter().any(|pkg| {
+				pr.title
+					.starts_with(&(pkg.to_owned() + ":"))
+			});
+
+			if !is_draft && title_contains_update && title_has_match {
+				let new = pr
 					.created_at
 					.signed_duration_since(most_recent_pr)
-					.num_milliseconds() > 0,
-			})
-			.collect::<Vec<_>>();
+					.num_milliseconds() > 0;
+
+				Some(Entry {
+					title: pr.title.clone(),
+					url: pr.url.clone(),
+					new: new,
+				})
+			} else {
+				None
+			}
+		})
+		.filter(|pr| !args.only_new || (args.only_new && pr.new))
+		.collect::<Vec<_>>();
 
 	match args.output {
 		Output::Json => println!("{}", serde_json::to_string(&filtered).unwrap()),
