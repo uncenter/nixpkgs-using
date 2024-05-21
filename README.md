@@ -58,7 +58,11 @@ Output format for the results of the search. One of `json` or `table`. Defaults 
 
 ### `--only-updates`
 
-Exclude pull requests that are not updating a package (filters for PRs that include a `->` in the title, as is the preferred commit/PR title style in [NixOS/nixpkgs](https://github.com/NixOS/nixpkgs)).
+Exclude pull requests that are not updating a package (filters for pull requests that include a `->` in the title, as is the preferred commit/pull request title style in [NixOS/nixpkgs](https://github.com/NixOS/nixpkgs)).
+
+### `--only-new`
+
+Exclude pull requests that have already been shown by the tool (filters for pull requests created after the timestamp of the last `nixpkgs-using` invocation).
 
 ## License
 
