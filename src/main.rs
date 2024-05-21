@@ -11,11 +11,7 @@ use users::get_current_username;
 mod github;
 use github::paginate_pull_requests;
 
-use tabled::settings::{
-	object::{Columns, Rows},
-	themes::Colorization,
-	Color, Disable, Panel, Style,
-};
+use tabled::settings::{location::ByColumnName, object::Rows, themes::Colorization, Color, Disable, Panel, Style};
 use tabled::{Table, Tabled};
 
 #[derive(Tabled, Debug, Serialize)]
@@ -154,14 +150,15 @@ fn main() -> Result<()> {
 		Output::Table => {
 			if filtered.len() > 0 {
 				let mut table = Table::new(&filtered);
-				table
-					.with(Style::modern())
-					.with(Panel::footer(format!("{} pull requests found.", filtered.len())))
-					.with(Colorization::exact([Color::BOLD], Rows::last()));
+				table.with(Style::modern());
 
 				if args.only_new {
-					table.with(Disable::column(Columns::last()));
+					table.with(Disable::column(ByColumnName::new("New")));
 				}
+
+				table
+					.with(Panel::footer(format!("{} pull requests found.", filtered.len())))
+					.with(Colorization::exact([Color::BOLD], Rows::last()));
 
 				println!("{}", table.to_string());
 			} else {
