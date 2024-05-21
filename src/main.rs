@@ -18,6 +18,7 @@ use tabled::{Table, Tabled};
 #[tabled(rename_all = "PascalCase")]
 struct Entry {
 	title: String,
+	#[tabled(rename = "URL")]
 	url: String,
 	new: bool,
 }
