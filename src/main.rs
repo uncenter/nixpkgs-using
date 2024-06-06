@@ -104,7 +104,7 @@ fn main() -> Result<()> {
 		bail!("Invalid repository format");
 	};
 
-	let packages = eval_nix_configuration(args.flake, configuration, username, args.home_manager_packages);
+	let packages = eval_nix_configuration(args.flake, configuration, username, args.home_manager_packages)?;
 	let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), args.token)?;
 
 	let most_recent_pr = Utc

@@ -16,7 +16,7 @@ pub fn detect_configuration() -> Result<String> {
 	}
 }
 
-pub fn eval_nix_configuration(flake: String, configuration: String, username: String, use_home_manager_packages: bool) -> Vec<String> {
+pub fn eval_nix_configuration(flake: String, configuration: String, username: String, use_home_manager_packages: bool) -> Result<Vec<String>> {
 	let expr = format!(
 		"(builtins.getFlake \"{flake}\").{configuration}.config.environment.systemPackages{}",
 		(if use_home_manager_packages {
@@ -26,18 +26,16 @@ pub fn eval_nix_configuration(flake: String, configuration: String, username: St
 		})
 	);
 
-	return serde_json::from_str(
-		String::from_utf8(
-			Command::new("nix")
-				.args(["eval", "--impure", "--json", "--expr", &expr, "--apply", "map (pkg: (builtins.parseDrvName pkg.name).name)"])
-				.output()
-				.unwrap()
-				.stdout,
-		)
-		.unwrap()
-		.as_str(),
-	)
-	.unwrap();
+	let cmd = Command::new("nix")
+		.args(["eval", "--impure", "--json", "--expr", &expr, "--apply", "map (pkg: (builtins.parseDrvName pkg.name).name)"])
+		.output()
+		.expect("failed to execute process");
+
+	if cmd.status.success() {
+		Ok(serde_json::from_str(&String::from_utf8(cmd.stdout)?)?)
+	} else {
+		bail!("unable to evaluate nix configuration: {}", String::from_utf8(cmd.stderr)?);
+	}
 }
 
 pub fn get_hostname() -> String {
