@@ -1,6 +1,12 @@
 use color_eyre::eyre::{bail, Result};
+use github::{build_rest_request, BASE_API_URL};
+use reqwest::StatusCode;
+use serde::Deserialize;
 
 use std::{env, path::Path, process::Command};
+
+pub mod cli;
+pub mod github;
 
 pub fn detect_configuration() -> Result<String> {
 	match env::consts::OS {
@@ -49,4 +55,24 @@ pub fn get_hostname() -> String {
 		false => output.stderr,
 	})
 	.unwrap();
+}
+
+pub fn check_by_name(package: &str, token: &str) -> Result<bool> {
+	// https://api.github.com/repos/nixos/nixpkgs/contents/pkgs/by-name/ki/kittysay/package.nix
+	let url = format!(
+		"{}/contents/pkgs/by-name/{}/{}/package.nix",
+		BASE_API_URL,
+		package
+			.chars()
+			.take(2)
+			.collect::<String>(),
+		package
+	);
+	let response = build_rest_request(&url, token).send()?;
+
+	match response.status() {
+		StatusCode::OK => Ok(true),
+		StatusCode::NOT_FOUND => Ok(false),
+		_ => bail!("Unexpected response"),
+	}
 }
