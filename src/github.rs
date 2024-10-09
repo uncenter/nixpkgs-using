@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use color_eyre::Result;
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
-use reqwest::blocking::{Client, RequestBuilder};
+use reqwest::blocking::Client;
 
 use self::pull_requests::{PullRequestsRepositoryPullRequests, PullRequestsRepositoryPullRequestsNodes};
 
@@ -53,12 +53,3 @@ pub fn paginate_pull_requests(owner: String, name: String, token: String) -> Res
 
 	return Ok(prs);
 }
-
-pub fn build_rest_request(url: &str, token: &str) -> RequestBuilder {
-	Client::new()
-		.get(url)
-		.header("User-Agent", "nixpkgs-track")
-		.bearer_auth(token)
-}
-
-pub const BASE_API_URL: &str = "https://api.github.com/repos/nixos/nixpkgs";

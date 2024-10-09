@@ -29,9 +29,9 @@ pub struct Cli {
 	#[clap(long, short, default_value = "nixos/nixpkgs")]
 	pub repository: String,
 
-	/// Output format for the results of the search
-	#[clap(long, short, value_enum, default_value = "table")]
-	pub output: Output,
+	/// Print results in JSON
+	#[clap(long, global = true)]
+	pub json: bool,
 
 	// See https://jwodder.github.io/kbits/posts/clap-bool-negate/.
 	// Cursed code to enable the correct relationship between `--home-manager-packages` and `--no-home-manager-packages`.
@@ -56,6 +56,4 @@ pub enum Commands {
 	},
 	/// List packages you use
 	List {},
-	/// Check the packages you use for various improvements
-	Check {},
 }
