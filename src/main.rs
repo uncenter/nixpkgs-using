@@ -67,34 +67,35 @@ fn main() -> Result<()> {
 
 			let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), args.token)?;
 
-			let filtered = prs
+			let filtered: Vec<Entry> = prs
 				.iter()
 				.flatten()
 				.filter_map(|pr| {
-					let is_draft = pr.is_draft;
 					let title_contains_update = !only_updates || pr.title.contains("->");
 					let title_has_match = packages.iter().any(|pkg| {
 						pr.title
 							.starts_with(&(pkg.to_owned() + ":"))
 					});
 
-					if !is_draft && title_contains_update && title_has_match {
+					if !pr.is_draft && title_contains_update && title_has_match {
 						let new = pr
 							.created_at
 							.signed_duration_since(most_recent_pr)
 							.num_milliseconds() > 0;
 
-						Some(Entry {
-							title: pr.title.clone(),
-							url: pr.url.clone(),
-							new,
-						})
-					} else {
-						None
-					}
+						// Either all are included (not only new ones), or only new ones are included and this one is new.
+						if !only_new || new {
+							return Some(Entry {
+								title: pr.title.clone(),
+								url: pr.url.clone(),
+								new,
+							});
+						};
+					};
+
+					None
 				})
-				.filter(|pr| !only_new || (only_new && pr.new))
-				.collect::<Vec<_>>();
+				.collect();
 
 			println!(
 				"{}",
