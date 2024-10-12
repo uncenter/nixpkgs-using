@@ -13,7 +13,7 @@ type DateTime = chrono::DateTime<Utc>;
 #[graphql(schema_path = "src/schema.graphql", query_path = "src/query.graphql", response_derives = "Debug")]
 struct PullRequests;
 
-pub fn fetch_pull_requests(client: Client, owner: String, name: String, cursor: std::option::Option<std::string::String>) -> Result<PullRequestsRepositoryPullRequests> {
+pub fn fetch_pull_requests(client: &Client, owner: String, name: String, cursor: Option<String>) -> Result<PullRequestsRepositoryPullRequests> {
 	let variables = pull_requests::Variables { owner, name, cursor };
 
 	let response_body = post_graphql::<PullRequests, _>(&client, "https://api.github.com/graphql", variables)?;
@@ -38,7 +38,7 @@ pub fn paginate_pull_requests(owner: String, name: String, token: String) -> Res
 	let mut prs: Vec<Option<PullRequestsRepositoryPullRequestsNodes>> = vec![];
 
 	loop {
-		let data = fetch_pull_requests(client.clone(), owner.clone(), name.clone(), cursor)?;
+		let data = fetch_pull_requests(&client, owner.clone(), name.clone(), cursor)?;
 
 		prs.extend(
 			data.nodes
