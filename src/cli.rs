@@ -1,10 +1,4 @@
-use clap::{ArgAction, Parser, Subcommand, ValueEnum};
-
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, ValueEnum)]
-pub enum Output {
-	Json,
-	Table,
-}
+use clap::{ArgAction, Parser, Subcommand};
 
 #[derive(Parser)]
 #[command(version, about)]
