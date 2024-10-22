@@ -2,6 +2,9 @@ use color_eyre::eyre::{bail, Result};
 
 use std::{env, path::Path, process::Command};
 
+pub mod cli;
+pub mod github;
+
 pub fn detect_configuration() -> Result<String> {
 	match env::consts::OS {
 		"linux" => {

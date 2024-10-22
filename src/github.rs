@@ -13,8 +13,12 @@ type DateTime = chrono::DateTime<Utc>;
 #[graphql(schema_path = "src/schema.graphql", query_path = "src/query.graphql", response_derives = "Debug")]
 struct PullRequests;
 
-pub fn fetch_pull_requests(client: Client, owner: String, name: String, cursor: std::option::Option<std::string::String>) -> Result<PullRequestsRepositoryPullRequests> {
-	let variables = pull_requests::Variables { owner, name, cursor };
+pub fn fetch_pull_requests(client: &Client, owner: &str, name: &str, cursor: Option<String>) -> Result<PullRequestsRepositoryPullRequests> {
+	let variables = pull_requests::Variables {
+		owner: owner.to_owned(),
+		name: name.to_owned(),
+		cursor,
+	};
 
 	let response_body = post_graphql::<PullRequests, _>(&client, "https://api.github.com/graphql", variables)?;
 
@@ -28,7 +32,7 @@ pub fn fetch_pull_requests(client: Client, owner: String, name: String, cursor: 
 		.pull_requests);
 }
 
-pub fn paginate_pull_requests(owner: String, name: String, token: String) -> Result<Vec<Option<PullRequestsRepositoryPullRequestsNodes>>> {
+pub fn paginate_pull_requests(owner: &str, name: &str, token: &str) -> Result<Vec<Option<PullRequestsRepositoryPullRequestsNodes>>> {
 	let client = Client::builder()
 		.user_agent("graphql-rust/0.10.0")
 		.default_headers(std::iter::once((reqwest::header::AUTHORIZATION, reqwest::header::HeaderValue::from_str(&format!("Bearer {}", token)).unwrap())).collect())
@@ -38,7 +42,7 @@ pub fn paginate_pull_requests(owner: String, name: String, token: String) -> Res
 	let mut prs: Vec<Option<PullRequestsRepositoryPullRequestsNodes>> = vec![];
 
 	loop {
-		let data = fetch_pull_requests(client.clone(), owner.clone(), name.clone(), cursor)?;
+		let data = fetch_pull_requests(&client, owner, name, cursor)?;
 
 		prs.extend(
 			data.nodes
