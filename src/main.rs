@@ -54,7 +54,7 @@ fn main() -> Result<()> {
 	let packages = eval_nix_configuration(&args.flake, configuration.trim(), &username, args.home_manager_packages)?;
 
 	match args.command {
-		Commands::Prs { only_new, only_updates } => {
+		Commands::Prs { token, only_new, only_updates } => {
 			let most_recent_pr_store = cache_dir.join("most_recent_pr");
 			if !most_recent_pr_store.exists() {
 				fs::write(&most_recent_pr_store, "0")?;
@@ -64,7 +64,7 @@ fn main() -> Result<()> {
 				.timestamp_opt(fs::read_to_string(&most_recent_pr_store)?.parse::<i64>()?, 0)
 				.unwrap();
 
-			let prs = paginate_pull_requests(owner, repo, &args.token)?;
+			let prs = paginate_pull_requests(owner, repo, &token)?;
 
 			let filtered: Vec<Entry> = prs
 				.iter()

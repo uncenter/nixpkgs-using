@@ -6,10 +6,6 @@ pub struct Cli {
 	#[command(subcommand)]
 	pub command: Commands,
 
-	// GitHub token
-	#[clap(long, short, env = "GITHUB_TOKEN")]
-	pub token: String,
-
 	/// Path to the flake to evaluate
 	#[clap(long, short, env = "FLAKE")]
 	pub flake: String,
@@ -41,6 +37,10 @@ pub struct Cli {
 pub enum Commands {
 	/// List update PRs for packages you use
 	Prs {
+		// GitHub token
+		#[clap(long, short, env = "GITHUB_TOKEN")]
+		token: String,
+
 		/// Exclude pull requests that have already been shown
 		#[clap(long)]
 		only_new: bool,
