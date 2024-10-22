@@ -65,7 +65,7 @@ fn main() -> Result<()> {
 				.timestamp_opt(fs::read_to_string(&most_recent_pr_store)?.parse::<i64>()?, 0)
 				.unwrap();
 
-			let prs = paginate_pull_requests(owner.to_string(), repo.to_string(), args.token)?;
+			let prs = paginate_pull_requests(owner, repo, &args.token)?;
 
 			let filtered: Vec<Entry> = prs
 				.iter()
