@@ -20,22 +20,22 @@ pub fn fetch_pull_requests(client: &Client, owner: &str, name: &str, cursor: Opt
 		cursor,
 	};
 
-	let response_body = post_graphql::<PullRequests, _>(&client, "https://api.github.com/graphql", variables)?;
+	let response_body = post_graphql::<PullRequests, _>(client, "https://api.github.com/graphql", variables)?;
 
 	let response_data: pull_requests::ResponseData = response_body
 		.data
 		.expect("missing response data");
 
-	return Ok(response_data
+	Ok(response_data
 		.repository
 		.expect("missing repository")
-		.pull_requests);
+		.pull_requests)
 }
 
 pub fn paginate_pull_requests(owner: &str, name: &str, token: &str) -> Result<Vec<Option<PullRequestsRepositoryPullRequestsNodes>>> {
 	let client = Client::builder()
 		.user_agent("graphql-rust/0.10.0")
-		.default_headers(std::iter::once((reqwest::header::AUTHORIZATION, reqwest::header::HeaderValue::from_str(&format!("Bearer {}", token)).unwrap())).collect())
+		.default_headers(std::iter::once((reqwest::header::AUTHORIZATION, reqwest::header::HeaderValue::from_str(&format!("Bearer {token}")).unwrap())).collect())
 		.build()?;
 
 	let mut cursor = None;
@@ -55,5 +55,5 @@ pub fn paginate_pull_requests(owner: &str, name: &str, token: &str) -> Result<Ve
 		cursor = data.page_info.end_cursor;
 	}
 
-	return Ok(prs);
+	Ok(prs)
 }

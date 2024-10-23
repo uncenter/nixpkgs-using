@@ -19,7 +19,7 @@ pub fn detect_configuration() -> Result<String> {
 	}
 }
 
-pub fn eval_nix_configuration(flake: String, configuration: String, username: String, use_home_manager_packages: bool) -> Result<Vec<String>> {
+pub fn eval_nix_configuration(flake: &str, configuration: &str, username: &str, use_home_manager_packages: bool) -> Result<Vec<String>> {
 	let expr = format!(
 		"(builtins.getFlake \"{flake}\").{configuration}.config.environment.systemPackages{}",
 		(if use_home_manager_packages {
@@ -47,9 +47,5 @@ pub fn get_hostname() -> String {
 		.output()
 		.expect("hostname should exist");
 
-	return String::from_utf8(match output.status.success() {
-		true => output.stdout,
-		false => output.stderr,
-	})
-	.unwrap();
+	String::from_utf8(if output.status.success() { output.stdout } else { output.stderr }).unwrap()
 }

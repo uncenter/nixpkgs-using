@@ -1,3 +1,4 @@
+#![allow(clippy::missing_errors_doc)]
 use clap::Parser;
 use color_eyre::eyre::{bail, ContextCompat, Ok, Result};
 use nixpkgs_using::cli::{Cli, Commands};
@@ -40,9 +41,7 @@ fn main() -> Result<()> {
 			.unwrap(),
 	};
 
-	let configuration = (detect_configuration()? + "." + &get_hostname())
-		.trim()
-		.to_string();
+	let configuration = detect_configuration()? + "." + &get_hostname();
 
 	let parts = args
 		.repository
@@ -52,7 +51,7 @@ fn main() -> Result<()> {
 		bail!("Invalid repository format");
 	};
 
-	let packages = eval_nix_configuration(args.flake, configuration, username, args.home_manager_packages)?;
+	let packages = eval_nix_configuration(&args.flake, configuration.trim(), &username, args.home_manager_packages)?;
 
 	match args.command {
 		Commands::Prs { only_new, only_updates } => {
@@ -99,28 +98,25 @@ fn main() -> Result<()> {
 
 			println!(
 				"{}",
-				match args.json {
-					true => serde_json::to_string(&filtered)?,
-					false => {
-						if filtered.len() > 0 {
-							let mut table = Table::new(&filtered);
-							table.with(Style::modern());
+				if args.json {
+					serde_json::to_string(&filtered)?
+				} else if filtered.is_empty() {
+					"0 pull requests found.".to_string()
+				} else {
+					let mut table = Table::new(&filtered);
+					table.with(Style::modern());
 
-							if only_new {
-								table.with(Disable::column(ByColumnName::new("New")));
-							}
-
-							table
-								.with(Panel::footer(format!("{} pull requests found.", filtered.len())))
-								.with(Colorization::exact([Color::BOLD], Rows::last()))
-								.with(Colorization::exact([Color::BOLD], Rows::first()))
-								.with(BorderSpanCorrection);
-
-							table.to_string()
-						} else {
-							"0 pull requests found.".to_string()
-						}
+					if only_new {
+						table.with(Disable::column(ByColumnName::new("New")));
 					}
+
+					table
+						.with(Panel::footer(format!("{} pull requests found.", filtered.len())))
+						.with(Colorization::exact([Color::BOLD], Rows::last()))
+						.with(Colorization::exact([Color::BOLD], Rows::first()))
+						.with(BorderSpanCorrection);
+
+					table.to_string()
 				}
 			);
 
@@ -138,13 +134,7 @@ fn main() -> Result<()> {
 			}
 		}
 		Commands::List {} => {
-			println!(
-				"{}",
-				match args.json {
-					true => serde_json::to_string(&packages)?,
-					false => packages.join(" "),
-				}
-			);
+			println!("{}", if args.json { serde_json::to_string(&packages)? } else { packages.join(" ") });
 		}
 	}
 
