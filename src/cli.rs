@@ -15,9 +15,6 @@ pub struct Cli {
 	/// Username to locate Home Manager packages from
 	#[clap(long, short)]
 	pub username: Option<String>,
-	/// The (GitHub) repository from which pull requests are fetched
-	#[clap(long, short, default_value = "nixos/nixpkgs")]
-	pub repository: String,
 
 	/// Print results in JSON
 	#[clap(long, global = true)]
@@ -35,16 +32,21 @@ pub struct Cli {
 
 #[derive(Subcommand)]
 pub enum Commands {
-	/// List update PRs for packages you use
+	/// List update pull requests for packages you use
 	Prs {
 		// GitHub token
 		#[clap(long, short, env = "GITHUB_TOKEN")]
 		token: String,
 
+		/// The GitHub repository from which pull requests are fetched
+		#[clap(long, short, default_value = "nixos/nixpkgs")]
+		repository: String,
+
 		/// Exclude pull requests that have already been shown
 		#[clap(long)]
 		only_new: bool,
 
+		/// Exclude pull requests not detected to be a version update
 		#[clap(long)]
 		only_updates: bool,
 	},

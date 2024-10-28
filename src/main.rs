@@ -43,18 +43,15 @@ fn main() -> Result<()> {
 
 	let configuration = detect_configuration()? + "." + &get_hostname();
 
-	let parts = args
-		.repository
-		.split('/')
-		.collect::<Vec<_>>();
-	let [owner, repo] = parts.as_slice() else {
-		bail!("Invalid repository format");
-	};
-
 	let packages = eval_nix_configuration(&args.flake, configuration.trim(), &username, args.home_manager_packages)?;
 
 	match args.command {
-		Commands::Prs { token, only_new, only_updates } => {
+		Commands::Prs {
+			token,
+			repository,
+			only_new,
+			only_updates,
+		} => {
 			let most_recent_pr_store = cache_dir.join("most_recent_pr");
 			if !most_recent_pr_store.exists() {
 				fs::write(&most_recent_pr_store, "0")?;
@@ -63,6 +60,13 @@ fn main() -> Result<()> {
 			let most_recent_pr = Utc
 				.timestamp_opt(fs::read_to_string(&most_recent_pr_store)?.parse::<i64>()?, 0)
 				.unwrap();
+
+			let parts = repository
+				.split('/')
+				.collect::<Vec<_>>();
+			let [owner, repo] = parts.as_slice() else {
+				bail!("Invalid repository format");
+			};
 
 			let prs = paginate_pull_requests(owner, repo, &token)?;
 
