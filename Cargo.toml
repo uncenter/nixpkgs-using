@@ -12,7 +12,7 @@ categories = ["command-line-utilities"]
 edition = "2021"
 
 [dependencies]
-chrono = { version = "0.4.38", features = ["serde"] }
+chrono = { version = "0.4.39", features = ["serde"] }
 clap = { version = "4.5.20", features = ["derive", "env"] }
 color-eyre = "0.6.3"
 etcetera = "0.8.0"
