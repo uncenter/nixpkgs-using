@@ -5,25 +5,28 @@ use nixpkgs_using::cli::{Cli, Commands};
 use nixpkgs_using::{detect_configuration, eval_nix_configuration, get_hostname, github::paginate_pull_requests};
 use std::fs;
 
+use yansi::hyperlink::HyperlinkExt;
+use yansi::Paint;
+
 use chrono::{TimeZone, Utc};
 use etcetera::{choose_base_strategy, BaseStrategy};
 use serde::Serialize;
 use users::get_current_username;
 
-use tabled::settings::{location::ByColumnName, object::Rows, style::BorderSpanCorrection, themes::Colorization, Color, Disable, Panel, Style};
-use tabled::{Table, Tabled};
-
-#[derive(Tabled, Debug, Serialize)]
-#[tabled(rename_all = "PascalCase")]
+#[derive(Debug, Serialize)]
 struct Entry {
 	title: String,
-	#[tabled(rename = "URL")]
 	url: String,
 	new: bool,
 }
 
 fn main() -> Result<()> {
 	let args = Cli::parse();
+	let displayln = |message: String| {
+		if !args.json {
+			println!("{}", message);
+		}
+	};
 	color_eyre::install()?;
 
 	let cache_dir = choose_base_strategy()?
@@ -41,9 +44,19 @@ fn main() -> Result<()> {
 			.unwrap(),
 	};
 
-	let configuration = detect_configuration()? + "." + &get_hostname();
+	let hostname = get_hostname();
+	let configuration = detect_configuration()?;
+	let combined_configuration = configuration + "." + hostname.trim();
 
-	let packages = eval_nix_configuration(&args.flake, configuration.trim(), &username, args.home_manager_packages)?;
+	displayln(format!(
+		"Evaluating user configuration (username: {}, configuration: {})... ",
+		username.green(),
+		combined_configuration.blue()
+	));
+
+	let packages = eval_nix_configuration(&args.flake, &combined_configuration, &username, args.home_manager_packages)?;
+
+	displayln(format!("{} packages detected.\n", packages.len().to_string().yellow()));
 
 	match args.command {
 		Commands::Prs {
@@ -68,7 +81,11 @@ fn main() -> Result<()> {
 				bail!("Invalid repository format");
 			};
 
+			displayln(format!("Fetching pull requests..."));
+
 			let prs = paginate_pull_requests(owner, repo, &token)?;
+
+			displayln(format!("{} pull requests found.\n", prs.len().to_string().yellow()));
 
 			let filtered: Vec<Entry> = prs
 				.iter()
@@ -104,23 +121,16 @@ fn main() -> Result<()> {
 				"{}",
 				if args.json {
 					serde_json::to_string(&filtered)?
-				} else if filtered.is_empty() {
-					"0 pull requests found.".to_string()
 				} else {
-					let mut table = Table::new(&filtered);
-					table.with(Style::modern());
-
-					if only_new {
-						table.with(Disable::column(ByColumnName::new("New")));
-					}
-
-					table
-						.with(Panel::footer(format!("{} pull requests found.", filtered.len())))
-						.with(Colorization::exact([Color::BOLD], Rows::last()))
-						.with(Colorization::exact([Color::BOLD], Rows::first()))
-						.with(BorderSpanCorrection);
-
-					table.to_string()
+					format!("{} filtered pull requests.\n", &filtered.len().to_string().magenta())
+						+ &filtered
+							.iter()
+							.map(|pr| {
+								let new = if pr.new { " (new)".green().to_string() } else { "".to_string() };
+								format!(" * {}{}", pr.title.link(pr.url.clone()), new)
+							})
+							.collect::<Vec<_>>()
+							.join("\n")
 				}
 			);
 
