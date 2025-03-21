@@ -20,14 +20,10 @@ pub struct Cli {
 	#[clap(long, global = true)]
 	pub json: bool,
 
-	// See https://jwodder.github.io/kbits/posts/clap-bool-negate/.
-	// Cursed code to enable the correct relationship between `--home-manager-packages` and `--no-home-manager-packages`.
-	/// Enable searching through Home Manager packages
-	#[clap(long = "home-manager-packages", overrides_with = "home_manager_packages")]
-	pub _no_home_manager_packages: bool,
-	/// Disable searching through Home Manager packages
-	#[clap(long = "no-home-manager-packages", action = ArgAction::SetFalse)]
+	#[clap(long, default_value = "true", global = true, action = ArgAction::Set)]
 	pub home_manager_packages: bool,
+	#[clap(long, default_value = "true", global = true, action = ArgAction::Set)]
+	pub system_packages: bool,
 }
 
 #[derive(Subcommand)]

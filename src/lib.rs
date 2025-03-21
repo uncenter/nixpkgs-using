@@ -19,14 +19,19 @@ pub fn detect_configuration() -> Result<String> {
 	}
 }
 
-pub fn eval_nix_configuration(flake: &str, configuration: &str, username: &str, use_home_manager_packages: bool) -> Result<Vec<String>> {
+pub fn eval_nix_configuration(flake: &str, configuration: &str, username: &str, use_system_packages: bool, use_home_manager_packages: bool) -> Result<Vec<String>> {
 	let expr = format!(
-		"(builtins.getFlake \"{flake}\").{configuration}.config.environment.systemPackages{}",
-		(if use_home_manager_packages {
+		"{}{}",
+		if use_system_packages {
+			format!("(builtins.getFlake \"{flake}\").{configuration}.config.environment.systemPackages")
+		} else {
+			"[]".to_owned()
+		},
+		if use_home_manager_packages {
 			format!(" ++ (builtins.getFlake \"{flake}\").{configuration}.config.home-manager.users.{username}.home.packages")
 		} else {
 			String::new()
-		})
+		}
 	);
 
 	let cmd = Command::new("nix")
@@ -49,3 +54,21 @@ pub fn get_hostname() -> String {
 
 	String::from_utf8(if output.status.success() { output.stdout } else { output.stderr }).unwrap()
 }
+
+pub const COMMON_EXTRA_PACKAGES: [&str; 13] = [
+	"nix",
+	"nix-info",
+	// home-manager
+	"home-configuration-reference-manpage",
+	"hm-session-vars.sh",
+	"dummy-fc-dir1", // fontconfig module
+	"dummy-fc-dir2",
+	// darwin
+	"darwin-uninstaller",
+	"darwin-version",
+	"darwin-rebuild",
+	"darwin-option",
+	"darwin-manpages",
+	"darwin-manual-html",
+	"darwin-help",
+];

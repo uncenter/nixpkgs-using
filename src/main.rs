@@ -2,6 +2,7 @@
 use clap::Parser;
 use color_eyre::eyre::{bail, ContextCompat, Ok, Result};
 use nixpkgs_using::cli::{Cli, Commands};
+use nixpkgs_using::COMMON_EXTRA_PACKAGES;
 use nixpkgs_using::{detect_configuration, eval_nix_configuration, get_hostname, github::paginate_pull_requests};
 use std::fs;
 
@@ -54,7 +55,8 @@ fn main() -> Result<()> {
 		combined_configuration.blue()
 	));
 
-	let packages = eval_nix_configuration(&args.flake, &combined_configuration, &username, args.home_manager_packages)?;
+	let mut packages = eval_nix_configuration(&args.flake, &combined_configuration, &username, args.system_packages, args.home_manager_packages)?;
+	packages.retain(|pkg| !COMMON_EXTRA_PACKAGES.contains(&pkg.as_str()));
 
 	displayln(format!("{} packages detected.\n", packages.len().to_string().yellow()));
 
