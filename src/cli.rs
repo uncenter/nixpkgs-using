@@ -38,13 +38,13 @@ pub enum Commands {
 		#[clap(long, short, default_value = "nixos/nixpkgs")]
 		repository: String,
 
-		/// Exclude pull requests that have already been shown
+		/// Show pull requests that have not already been shown
 		#[clap(long)]
-		only_new: bool,
+		new: bool,
 
-		/// Exclude pull requests not detected to be a version update
+		/// Show pull requests that have been detected to be a version update
 		#[clap(long)]
-		only_updates: bool,
+		updates: bool,
 	},
 	/// List packages you use
 	List {},

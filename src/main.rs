@@ -61,12 +61,7 @@ fn main() -> Result<()> {
 	displayln(format!("{} packages detected.\n", packages.len().to_string().yellow()));
 
 	match args.command {
-		Commands::Prs {
-			token,
-			repository,
-			only_new,
-			only_updates,
-		} => {
+		Commands::Prs { token, repository, new, updates } => {
 			let most_recent_pr_store = cache_dir.join("most_recent_pr");
 			if !most_recent_pr_store.exists() {
 				fs::write(&most_recent_pr_store, "0")?;
@@ -93,24 +88,24 @@ fn main() -> Result<()> {
 				.iter()
 				.flatten()
 				.filter_map(|pr| {
-					let title_contains_update = !only_updates || pr.title.contains("->");
+					let title_contains_update = !updates || pr.title.contains("->");
 					let title_has_match = packages.iter().any(|pkg| {
 						pr.title
 							.starts_with(&(pkg.to_owned() + ":"))
 					});
 
 					if !pr.is_draft && title_contains_update && title_has_match {
-						let new = pr
+						let is_new = pr
 							.created_at
 							.signed_duration_since(most_recent_pr)
 							.num_milliseconds() > 0;
 
 						// Either all are included (not only new ones), or only new ones are included and this one is new.
-						if !only_new || new {
+						if !new || is_new {
 							return Some(Entry {
 								title: pr.title.clone(),
 								url: pr.url.clone(),
-								new,
+								new: is_new,
 							});
 						};
 					};
