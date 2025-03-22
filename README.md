@@ -55,13 +55,13 @@ Requires a GitHub API token to use, provided through the `--token` flag or from 
 
 The (GitHub) repository from which pull requests are fetched. Defaults to [`NixOS/nixpkgs`](https://github.com/NixOS/nixpkgs).
 
-#### `--only-updates`
+#### `--updates`
 
-Exclude pull requests that are not updating a package (filters for pull requests that include a `->` in the title, as is the preferred commit/pull request title style in [NixOS/nixpkgs](https://github.com/NixOS/nixpkgs)).
+Shown pull requests that are detected to be package updates (filters for pull requests that include a `->` in the title, as is the preferred commit/pull request title style in [NixOS/nixpkgs](https://github.com/NixOS/nixpkgs)).
 
-#### `--only-new`
+#### `--new`
 
-Exclude pull requests that have already been shown by the tool (filters for pull requests created after the timestamp of the last `nixpkgs-using` invocation).
+Shown pull requests that have not already been shown (filters for pull requests created after the timestamp of the last `nixpkgs-using` invocation).
 
 ## License
 
