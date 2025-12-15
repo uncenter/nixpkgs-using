@@ -1,5 +1,5 @@
 use chrono::prelude::*;
-use color_eyre::Result;
+use color_eyre::{eyre::bail, Result};
 use graphql_client::{reqwest::post_graphql_blocking as post_graphql, GraphQLQuery};
 use reqwest::blocking::Client;
 
@@ -21,7 +21,11 @@ pub fn fetch_pull_requests(client: &Client, owner: &str, name: &str, cursor: Opt
 	};
 
 	let response_body = post_graphql::<PullRequests, _>(client, "https://api.github.com/graphql", variables)?;
-
+	if let Some(errors) = response_body.errors {
+		for error in errors {
+			bail!(error);
+		}
+	}
 	let response_data: pull_requests::ResponseData = response_body
 		.data
 		.expect("missing response data");
